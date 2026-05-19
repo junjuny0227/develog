@@ -533,7 +533,7 @@ Bug reports, feature suggestions, and Pull Requests are welcome!
 
 ## License
 
-MIT License - See [LICENSE.md](LICENSE.md) file for details.
+MIT License - See [LICENSE](../LICENSE) file for details.
 
 ## Links
 

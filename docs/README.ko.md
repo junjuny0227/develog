@@ -533,7 +533,7 @@ A: 완벽히 지원합니다. 모든 타입 정의가 포함되어 있습니다.
 
 ## 라이센스
 
-MIT License - 자세한 내용은 [LICENSE.md](LICENSE.md) 파일을 참조하세요.
+MIT License - 자세한 내용은 [LICENSE](../LICENSE) 파일을 참조하세요.
 
 ## 링크
 

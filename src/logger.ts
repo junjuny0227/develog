@@ -9,12 +9,15 @@ export class Develog {
   private readonly environment: Environment;
   private readonly enabledEnvironments: Set<Environment>;
   private readonly prefix: string;
+  private readonly staticLogPrefix: string;
   private readonly isEnabled: boolean;
   private readonly showTimestamp: boolean;
   private readonly timestampFormat: TimestampFormat;
   private readonly namespaces: Map<string, Develog>;
   private readonly namespaceName?: string;
   private readonly namespaceFilter?: string[];
+  private readonly namespaceFilterSet?: Set<string>;
+  private readonly namespaceWildcardPrefixes: string[];
 
   constructor(options: LoggerOptions = {}) {
     const {
@@ -37,6 +40,15 @@ export class Develog {
     this.namespaces = new Map();
     this.namespaceName = _namespaceName;
     this.namespaceFilter = enabledNamespaces;
+    this.namespaceFilterSet = enabledNamespaces ? new Set(enabledNamespaces) : undefined;
+    this.namespaceWildcardPrefixes = enabledNamespaces
+      ? enabledNamespaces
+          .filter((pattern) => pattern.endsWith(':*'))
+          .map((pattern) => pattern.slice(0, -2))
+      : [];
+    this.staticLogPrefix = this.namespaceName
+      ? `${this.prefix}:${this.namespaceName}`
+      : this.prefix;
 
     // 환경 기반 활성화 체크
     const envEnabled = this.enabledEnvironments.has(this.environment);
@@ -68,8 +80,9 @@ export class Develog {
    */
   namespace(name: string): Develog {
     // 이미 생성된 네임스페이스가 있으면 재사용
-    if (this.namespaces.has(name)) {
-      return this.namespaces.get(name)!;
+    const existingLogger = this.namespaces.get(name);
+    if (existingLogger) {
+      return existingLogger;
     }
 
     // 계층 구조 지원: 부모 네임스페이스가 있으면 연결
@@ -95,7 +108,7 @@ export class Develog {
    */
   private isNamespaceEnabled(): boolean {
     // 네임스페이스 필터가 없으면 모두 활성화
-    if (!this.namespaceFilter || this.namespaceFilter.length === 0) {
+    if (!this.namespaceFilterSet || this.namespaceFilterSet.size === 0) {
       return true;
     }
 
@@ -105,22 +118,19 @@ export class Develog {
     }
 
     // '*'는 모든 네임스페이스 활성화
-    if (this.namespaceFilter.includes('*')) {
+    if (this.namespaceFilterSet.has('*')) {
       return true;
     }
 
     // 정확한 매칭 확인
-    if (this.namespaceFilter.includes(this.namespaceName)) {
+    if (this.namespaceFilterSet.has(this.namespaceName)) {
       return true;
     }
 
     // 와일드카드 패턴 매칭
-    for (const pattern of this.namespaceFilter) {
-      if (pattern.endsWith(':*')) {
-        const prefix = pattern.slice(0, -2);
-        if (this.namespaceName === prefix || this.namespaceName.startsWith(`${prefix}:`)) {
-          return true;
-        }
+    for (const prefix of this.namespaceWildcardPrefixes) {
+      if (this.namespaceName === prefix || this.namespaceName.startsWith(`${prefix}:`)) {
+        return true;
       }
     }
 
@@ -131,12 +141,7 @@ export class Develog {
    * 로그 출력 앞에 붙을 prefix 생성
    */
   private getLogPrefix(): string {
-    let prefix = this.prefix;
-
-    // 네임스페이스 추가
-    if (this.namespaceName) {
-      prefix = `${prefix}:${this.namespaceName}`;
-    }
+    let prefix = this.staticLogPrefix;
 
     // 타임스탬프 추가
     if (this.showTimestamp) {
@@ -294,4 +299,4 @@ export class Develog {
 /**
  * 기본 인스턴스 생성 및 export
  */
-export const develog = new Develog();
+export const develog = /* @__PURE__ */ new Develog();
